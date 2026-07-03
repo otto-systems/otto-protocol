@@ -1,6 +1,6 @@
 {
   "repo": "otto-protocol",
-  "syncedAt": "2026-07-03T15:18:09Z",
+  "syncedAt": "2026-07-03T16:00:14.258Z",
   "targetVersion": "0.2.1",
   "manifestConsistency": "validated",
   "schemaConsistency": "validated",
@@ -8,13 +8,13 @@
   "releasePrep": "completed",
   "commit": {
     "status": "committed",
-    "hash": "5663a557cb27c793e8982c7f6fbfee66d49f3b71",
-    "message": "sync index reconciled to current HEAD"
+    "hash": "4b2bf863aae68d12974a736b806cf26b2ffa3410",
+    "message": "release 0.2.1 metadata aligned to current HEAD"
   },
   "push": {
     "status": "pushed"
   },
-  "updatedAt": "2026-07-03T15:54:38.261Z",
+  "updatedAt": "2026-07-03T16:00:14.258Z",
   "releaseVersion": "0.2.1",
   "releaseMetadata": {
     "channel": "stable",
