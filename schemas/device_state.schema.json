@@ -1,0 +1,358 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://otto.dev/schemas/device_state.schema.json",
+  "title": "Device State",
+  "description": "Snapshot of a managed device used for OttoUpdate policy evaluation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "device_id",
+    "hostname",
+    "recorded_at",
+    "platform",
+    "hardware",
+    "network",
+    "installed_product",
+    "update_history",
+    "tags",
+    "deferred_count",
+    "last_deferred_at",
+    "managed",
+    "management_group"
+  ],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique device identifier."
+    },
+    "hostname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Device hostname captured at snapshot time."
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when this snapshot was recorded."
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "os_version",
+        "kernel_version",
+        "arch"
+      ],
+      "properties": {
+        "os": {
+          "type": "string",
+          "enum": [
+            "linux",
+            "macos",
+            "windows"
+          ],
+          "description": "Operating system family."
+        },
+        "os_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Operating system version string."
+        },
+        "kernel_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Kernel version string."
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "x86",
+            "x64",
+            "arm64"
+          ],
+          "description": "CPU architecture."
+        }
+      }
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cpu_model",
+        "cpu_cores",
+        "ram_bytes",
+        "disk_total_bytes",
+        "disk_free_bytes",
+        "battery_percent",
+        "on_ac_power"
+      ],
+      "properties": {
+        "cpu_model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "CPU model identifier."
+        },
+        "cpu_cores": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of logical CPU cores."
+        },
+        "ram_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total installed RAM in bytes."
+        },
+        "disk_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total disk capacity in bytes for the install volume."
+        },
+        "disk_free_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Free disk bytes available on the install volume."
+        },
+        "battery_percent": {
+          "description": "Battery percentage from 0-100, or null for systems without battery telemetry.",
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on_ac_power": {
+          "type": "boolean",
+          "description": "Whether device is currently connected to external power."
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connected",
+        "connection_type",
+        "metered"
+      ],
+      "properties": {
+        "connected": {
+          "type": "boolean",
+          "description": "Whether network connectivity is currently available."
+        },
+        "connection_type": {
+          "type": "string",
+          "enum": [
+            "ethernet",
+            "wifi",
+            "cellular",
+            "unknown"
+          ],
+          "description": "Primary network connection type."
+        },
+        "metered": {
+          "type": "boolean",
+          "description": "Whether active network is metered/cost-sensitive."
+        }
+      }
+    },
+    "installed_product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "channel",
+        "install_path"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Installed product name."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$",
+          "description": "Installed product semantic version."
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "beta",
+            "canary",
+            "lts"
+          ],
+          "description": "Installed release channel."
+        },
+        "install_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "description": "Filesystem path where the product is installed."
+        }
+      }
+    },
+    "update_history": {
+      "type": "array",
+      "description": "Historical update events for this device.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "version",
+          "outcome",
+          "recorded_at"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier of the update history entry."
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$",
+            "description": "Version targeted by this update event."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "deferred",
+              "blocked",
+              "failed",
+              "rolled_back"
+            ],
+            "description": "Result of the update attempt."
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the update event occurred."
+          },
+          "reason": {
+            "description": "Optional explanation for deferred/blocked/failed outcomes.",
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "description": "Device tags used in policy targeting.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "deferred_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of consecutive deferrals for the current update wave."
+    },
+    "last_deferred_at": {
+      "description": "Timestamp of the most recent deferral, or null if never deferred.",
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "managed": {
+      "type": "boolean",
+      "description": "Whether this device is actively managed by Otto infrastructure."
+    },
+    "management_group": {
+      "description": "Optional management group assignment.",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "device_id": "27f4f2d1-d8b1-45c4-94e8-ab7c799f6f2c",
+      "hostname": "otto-mac-01",
+      "recorded_at": "2026-07-02T11:45:00Z",
+      "platform": {
+        "os": "macos",
+        "os_version": "15.5",
+        "kernel_version": "24.5.0",
+        "arch": "arm64"
+      },
+      "hardware": {
+        "cpu_model": "Apple M2",
+        "cpu_cores": 8,
+        "ram_bytes": 17179869184,
+        "disk_total_bytes": 512110190592,
+        "disk_free_bytes": 185542587392,
+        "battery_percent": 82,
+        "on_ac_power": true
+      },
+      "network": {
+        "connected": true,
+        "connection_type": "wifi",
+        "metered": false
+      },
+      "installed_product": {
+        "name": "otto",
+        "version": "1.7.6",
+        "channel": "stable",
+        "install_path": "/Applications/Otto.app"
+      },
+      "update_history": [
+        {
+          "event_id": "eb1fcf72-e7b8-4c4d-b02d-f1285f2495bd",
+          "version": "1.7.6",
+          "outcome": "applied",
+          "recorded_at": "2026-06-20T02:12:45Z",
+          "reason": null
+        }
+      ],
+      "tags": [
+        "managed",
+        "pilot"
+      ],
+      "deferred_count": 1,
+      "last_deferred_at": "2026-06-30T03:00:00Z",
+      "managed": true,
+      "management_group": "engineering"
+    }
+  ]
+}

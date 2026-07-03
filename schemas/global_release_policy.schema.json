@@ -1,0 +1,503 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://otto.dev/schemas/global_release_policy.schema.json",
+  "title": "Global Release Policy",
+  "description": "Policy document defining device targeting and update decision rules for OttoUpdate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "policy_name",
+    "effective_from",
+    "effective_until",
+    "priority",
+    "target_criteria",
+    "rules",
+    "maintenance_windows",
+    "allow_downgrade",
+    "require_reboot",
+    "max_deferred_days",
+    "notification_channels"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "description": "Schema version for this policy document."
+    },
+    "policy_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the policy."
+    },
+    "policy_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Human-readable policy name."
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when this policy becomes active."
+    },
+    "effective_until": {
+      "description": "Timestamp when this policy expires; null means no expiry.",
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Priority for policy precedence; higher values are evaluated first."
+    },
+    "target_criteria": {
+      "type": "object",
+      "description": "Device targeting filters that determine whether this policy applies.",
+      "additionalProperties": false,
+      "required": [
+        "products",
+        "channels",
+        "platforms",
+        "architectures",
+        "management_groups",
+        "tags_any",
+        "tags_all",
+        "min_installed_version",
+        "max_installed_version"
+      ],
+      "properties": {
+        "products": {
+          "type": "array",
+          "description": "Allowed product identifiers.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "uniqueItems": true
+        },
+        "channels": {
+          "type": "array",
+          "description": "Allowed release channels for this policy.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "beta",
+              "canary",
+              "lts"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "platforms": {
+          "type": "array",
+          "description": "Allowed device platforms.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "enum": [
+              "linux",
+              "macos",
+              "windows"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "architectures": {
+          "type": "array",
+          "description": "Allowed CPU architectures.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "enum": [
+              "x86",
+              "x64",
+              "arm64"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "management_groups": {
+          "type": "array",
+          "description": "Allowed management groups; empty means all groups.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "uniqueItems": true
+        },
+        "tags_any": {
+          "type": "array",
+          "description": "At least one of these device tags must be present when non-empty.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "uniqueItems": true
+        },
+        "tags_all": {
+          "type": "array",
+          "description": "All of these device tags must be present when non-empty.",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "uniqueItems": true
+        },
+        "min_installed_version": {
+          "description": "Minimum installed version required for policy applicability.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_installed_version": {
+          "description": "Maximum installed version allowed for policy applicability.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Ordered rule list used to derive policy decisions.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "name",
+          "priority",
+          "enabled",
+          "conditions",
+          "action"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the rule."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Human-readable rule name."
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Rule evaluation priority within the policy; higher is evaluated first."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Indicates whether the rule is active."
+          },
+          "conditions": {
+            "type": "array",
+            "description": "Condition clauses that must match according to match_mode.",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field",
+                "operator",
+                "value"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "description": "Device state field path to evaluate."
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "eq",
+                    "neq",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "in",
+                    "not_in",
+                    "contains",
+                    "exists"
+                  ],
+                  "description": "Comparison operator used for evaluation."
+                },
+                "value": {
+                  "description": "Value used by the condition operator.",
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "number" },
+                    { "type": "integer" },
+                    { "type": "boolean" },
+                    {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          { "type": "string" },
+                          { "type": "number" },
+                          { "type": "integer" },
+                          { "type": "boolean" }
+                        ]
+                      }
+                    },
+                    { "type": "null" }
+                  ]
+                }
+              }
+            }
+          },
+          "match_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "default": "all",
+            "description": "Whether all conditions or any condition must match."
+          },
+          "action": {
+            "type": "object",
+            "description": "Decision action to apply when this rule matches.",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "reason"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "approve",
+                  "defer",
+                  "block",
+                  "require_approval"
+                ],
+                "description": "Decision type returned by the policy engine."
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512,
+                "description": "Human-readable reason for audit logs and client messaging."
+              },
+              "defer_seconds": {
+                "description": "Deferral duration in seconds when action type is defer.",
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7776000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "approval_group": {
+                "description": "Approval group identifier when action type is require_approval.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "maintenance_windows": {
+      "description": "Allowed maintenance windows for update operations; null means unrestricted.",
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "days_of_week",
+              "start_time",
+              "end_time",
+              "timezone"
+            ],
+            "properties": {
+              "days_of_week": {
+                "type": "array",
+                "description": "Weekdays when updates are permitted.",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                  ]
+                },
+                "uniqueItems": true
+              },
+              "start_time": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+                "description": "Window start time in HH:MM 24-hour format."
+              },
+              "end_time": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+                "description": "Window end time in HH:MM 24-hour format."
+              },
+              "timezone": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "description": "IANA timezone for interpreting maintenance window times."
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "allow_downgrade": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether downgrade to lower versions is permitted."
+    },
+    "require_reboot": {
+      "type": "string",
+      "enum": [
+        "always",
+        "never",
+        "if_required"
+      ],
+      "description": "Reboot requirement policy for applied updates."
+    },
+    "max_deferred_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 90,
+      "description": "Maximum number of deferral days before escalation or forced handling."
+    },
+    "notification_channels": {
+      "type": "array",
+      "description": "Notification mechanisms used to inform operators/users about update decisions.",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "system_tray",
+          "email",
+          "webhook",
+          "sms"
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "policy_id": "6d9cdac0-0f63-4cb8-8db9-14f9a1e24b0e",
+      "policy_name": "Production Stable Rollout",
+      "effective_from": "2026-07-01T00:00:00Z",
+      "effective_until": null,
+      "priority": 80,
+      "target_criteria": {
+        "products": ["otto"],
+        "channels": ["stable"],
+        "platforms": ["macos", "windows"],
+        "architectures": ["x64", "arm64"],
+        "management_groups": ["prod", "pilot"],
+        "tags_any": ["managed", "corp"],
+        "tags_all": ["security-baseline"],
+        "min_installed_version": "1.7.0",
+        "max_installed_version": null
+      },
+      "rules": [
+        {
+          "rule_id": "4bcfbe5a-d4ad-4d5f-b8f2-d9957e14f6f8",
+          "name": "Require approval for finance group",
+          "priority": 100,
+          "enabled": true,
+          "conditions": [
+            {
+              "field": "management_group",
+              "operator": "eq",
+              "value": "finance"
+            }
+          ],
+          "match_mode": "all",
+          "action": {
+            "type": "require_approval",
+            "reason": "Finance endpoints require explicit approval",
+            "defer_seconds": null,
+            "approval_group": "finance-approvers"
+          }
+        }
+      ],
+      "maintenance_windows": [
+        {
+          "days_of_week": ["sat", "sun"],
+          "start_time": "01:00",
+          "end_time": "05:00",
+          "timezone": "UTC"
+        }
+      ],
+      "allow_downgrade": false,
+      "require_reboot": "if_required",
+      "max_deferred_days": 14,
+      "notification_channels": ["system_tray", "email"]
+    }
+  ]
+}
